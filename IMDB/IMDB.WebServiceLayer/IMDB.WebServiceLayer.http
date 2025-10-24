@@ -1,0 +1,6 @@
+@IMDB.WebServiceLayer_HostAddress = http://localhost:5078
+
+GET {{IMDB.WebServiceLayer_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
