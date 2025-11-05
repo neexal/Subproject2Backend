@@ -1,4 +1,5 @@
 using IMDB.DataServiceLayer;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using IMDB.WebServiceLayer.DTO;
 
@@ -12,12 +13,13 @@ public class UserController: ControllerBase
     public UserController(IDataService service) => _service = service;
 
     [HttpGet]
+    [Authorize]
     public IActionResult GetAllUsers()
     {
         var users = _service.GetUsers();
         var userModel = users.Select(u => new UserModel
         {
-            Id = u.Id,
+            Id = u.UserId,
             Username = u.Username,
             Email = u.Email,
             Status = u.Status
@@ -26,13 +28,14 @@ public class UserController: ControllerBase
     }
 
     [HttpGet("{id:int}")]
+    [Authorize]
     public IActionResult GetUserById(int id)
     {
         var user = _service.GetUserById(id);
         if (user == null) return NotFound();
         var userModel = new UserModel
         {
-            Id = user.Id,
+            Id = user.UserId,
             Username = user.Username,
             Email = user.Email,
             Status = user.Status
@@ -40,21 +43,8 @@ public class UserController: ControllerBase
         return Ok(userModel);
         
     }
-    [HttpPost("signin")]
-    public IActionResult Login([FromBody] UserValidate uservalidate)
-    {
-        var user = _service.UserLogin(uservalidate.Email, uservalidate.Password);
-        if (user != null) return Ok(new { Message = "Login Successful!", UserId = user.Id});
-        return Unauthorized(new { Message = "Invalid email or password!"});
-    }
-    [HttpPost("register")]
-    public IActionResult Register([FromBody] RegisterUserRequest request)
-    {
-        var userId = _service.RegisterUser(request.Username, request.Password, request.Email);
-        return Ok(new { UserId = userId, Message = $"User {request.Username} registered successfully"});
-    }
-
     [HttpDelete("{id:int}")]
+    [Authorize]
     public IActionResult DeleteUser(int id)
     {
         var result = _service.DeleteUserById(id);
