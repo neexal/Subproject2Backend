@@ -1,17 +1,18 @@
-﻿using IMDB.DataServiceLayer.Models;
+using IMDB.DataServiceLayer.Models;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
+
 namespace IMDB.DataServiceLayer;
 
 public class DataService : IDataService
 {
     private readonly ImdbContext _imdbContext;
 
-    public DataService()
+    public DataService(ImdbContext imdbContext)
     {
-        _imdbContext = new ImdbContext();
+        _imdbContext = imdbContext;
     }
-    
-    //RegisterUser
+
     public int RegisterUser(string username, string password, string email)
     {
         var user = new AppUser
@@ -24,23 +25,18 @@ public class DataService : IDataService
         _imdbContext.SaveChanges();
         return user.UserId;
     }
-    
-    //GetUsers
+
     public IList<AppUser> GetUsers()
     {
-        var query = _imdbContext.AppUsers.ToList();
-        return query;
-    }
-    
-    //LoginUserValidation
-    public AppUser? UserLogin(string email, string password)
-    {
-        var query = _imdbContext.AppUsers
-            .FirstOrDefault(u => u.Email == email && u.Password == password);
-        return query;
+        return _imdbContext.AppUsers.ToList();
     }
 
-    //Authentication methods
+    public AppUser? UserLogin(string email, string password)
+    {
+        return _imdbContext.AppUsers
+            .FirstOrDefault(u => u.Email == email && u.Password == password);
+    }
+
     public AppUser? GetUserByEmail(string email)
     {
         return _imdbContext.AppUsers.FirstOrDefault(u => u.Email == email);
@@ -63,21 +59,18 @@ public class DataService : IDataService
         var user = _imdbContext.AppUsers.FirstOrDefault(u => u.UserId == userId);
         if (user != null)
         {
-            user.LastLoginAt = DateTime.UtcNow;
+            user.LastLoginAt = System.DateTime.UtcNow;
             _imdbContext.SaveChanges();
             return true;
         }
         return false;
     }
-    
-    //GetUserById
+
     public AppUser? GetUserById(int id)
     {
-        var query = _imdbContext.AppUsers.FirstOrDefault(u => u.UserId == id);
-        return query;
+        return _imdbContext.AppUsers.FirstOrDefault(u => u.UserId == id);
     }
-    
-    //DeleteUserById
+
     public bool DeleteUserById(int id)
     {
         var query = _imdbContext.AppUsers.FirstOrDefault(u => u.UserId == id);
@@ -90,7 +83,6 @@ public class DataService : IDataService
         return false;
     }
 
-    // Movies
     public IList<Movie> GetMovies(int page = 1, int pageSize = 50)
     {
         return _imdbContext.Movies
@@ -112,14 +104,13 @@ public class DataService : IDataService
     public IList<Movie> SearchMovies(string searchTerm, int page = 1, int pageSize = 50)
     {
         return _imdbContext.Movies
-            .Where(m => m.PrimaryTitle.Contains(searchTerm) || 
+            .Where(m => m.PrimaryTitle.Contains(searchTerm) ||
                        (m.PlotSummary != null && m.PlotSummary.Contains(searchTerm)))
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
     }
 
-    // Persons
     public IList<Person> GetPersons(int page = 1, int pageSize = 50)
     {
         return _imdbContext.Persons
@@ -147,7 +138,6 @@ public class DataService : IDataService
             .ToList();
     }
 
-    // Enhanced methods for detailed information
     public Movie? GetMovieWithDetails(int id)
     {
         return _imdbContext.Movies
@@ -237,7 +227,7 @@ public class DataService : IDataService
     public int GetMovieSearchCount(string searchTerm)
     {
         return _imdbContext.Movies
-            .Where(m => m.PrimaryTitle.Contains(searchTerm) || 
+            .Where(m => m.PrimaryTitle.Contains(searchTerm) ||
                        (m.PlotSummary != null && m.PlotSummary.Contains(searchTerm)))
             .Count();
     }
@@ -249,35 +239,30 @@ public class DataService : IDataService
             .Count();
     }
 
-    // Framework functionality using PostgreSQL functions
     public int RegisterUserFunction(string email, string username, string password)
     {
-        var result = _imdbContext.Database.SqlQueryRaw<int>(
+        return _imdbContext.Database.SqlQueryRaw<int>(
             "SELECT register_user({0}, {1}, {2}) AS result", email, username, password).First();
-        return result;
     }
 
     public string ToggleMovieBookmark(int userId, int movieId)
     {
-        // Check if bookmark exists using Entity Framework
         var existingBookmark = _imdbContext.UserMovieBookmarks
             .FirstOrDefault(umb => umb.UserId == userId && umb.MovieId == movieId);
-        
+
         if (existingBookmark != null)
         {
-            // Remove bookmark
             _imdbContext.UserMovieBookmarks.Remove(existingBookmark);
             _imdbContext.SaveChanges();
             return "Movie bookmark removed";
         }
         else
         {
-            // Add bookmark
             var newBookmark = new UserMovieBookmark
             {
                 UserId = userId,
                 MovieId = movieId,
-                BookmarkedAt = DateTime.UtcNow
+                BookmarkedAt = System.DateTime.UtcNow
             };
             _imdbContext.UserMovieBookmarks.Add(newBookmark);
             _imdbContext.SaveChanges();
@@ -287,23 +272,20 @@ public class DataService : IDataService
 
     public string TogglePersonBookmark(int userId, int personId)
     {
-        var result = _imdbContext.Database.SqlQueryRaw<string>(
+        return _imdbContext.Database.SqlQueryRaw<string>(
             "SELECT toggle_person_bookmark({0}, {1}) AS result", userId, personId).First();
-        return result;
     }
 
     public int AddMovieNote(int userId, int movieId, string note)
     {
-        var result = _imdbContext.Database.SqlQueryRaw<int>(
+        return _imdbContext.Database.SqlQueryRaw<int>(
             "SELECT add_movie_note({0}, {1}, {2}) AS result", userId, movieId, note).First();
-        return result;
     }
 
     public int AddPersonNote(int userId, int personId, string note)
     {
-        var result = _imdbContext.Database.SqlQueryRaw<int>(
+        return _imdbContext.Database.SqlQueryRaw<int>(
             "SELECT add_person_note({0}, {1}, {2}) AS result", userId, personId, note).First();
-        return result;
     }
 
     public IList<UserMovieBookmarkResult> GetUserMovieBookmarks(int userId)
@@ -344,44 +326,39 @@ public class DataService : IDataService
 
     public string RateMovie(int userId, int movieId, int rating)
     {
-        // Check if user has already rated this movie using Entity Framework
         var existingRating = _imdbContext.UserTitleRatings
             .FirstOrDefault(utr => utr.UserId == userId && utr.MovieId == movieId);
-        
+
         if (existingRating != null)
         {
-            // Update existing rating
             existingRating.Rating = rating;
-            existingRating.RatedAt = DateTime.UtcNow;
+            existingRating.RatedAt = System.DateTime.UtcNow;
         }
         else
         {
-            // Insert new rating
             var newRating = new UserTitleRating
             {
                 UserId = userId,
                 MovieId = movieId,
                 Rating = rating,
-                RatedAt = DateTime.UtcNow
+                RatedAt = System.DateTime.UtcNow
             };
             _imdbContext.UserTitleRatings.Add(newRating);
         }
-        
+
         _imdbContext.SaveChanges();
-        
-        // Recalculate average rating using Entity Framework
+
         var avgRating = _imdbContext.UserTitleRatings
             .Where(utr => utr.MovieId == movieId)
             .Average(utr => utr.Rating);
-        
+
         var voteCount = _imdbContext.UserTitleRatings
             .Count(utr => utr.MovieId == movieId);
-        
-        // Update or insert into ImdbRating table
+
         var imdbRating = _imdbContext.ImdbRatings.FirstOrDefault(ir => ir.MovieId == movieId);
         if (imdbRating != null)
         {
-            imdbRating.Average = Math.Round(avgRating, 1);
+            imdbRating.Average = System.Math.Round(avgRating, 1);
             imdbRating.Votes = voteCount;
         }
         else
@@ -389,21 +366,21 @@ public class DataService : IDataService
             var newImdbRating = new ImdbRating
             {
                 MovieId = movieId,
-                Average = Math.Round(avgRating, 1),
+                Average = System.Math.Round(avgRating, 1),
                 Votes = voteCount
             };
             _imdbContext.ImdbRatings.Add(newImdbRating);
         }
-        
+
         _imdbContext.SaveChanges();
-        
+
         return $"Movie {movieId} rated {rating}/10 by user {userId}. New average: {avgRating:F1} ({voteCount} votes)";
     }
 
     public IList<MovieSearchResult> StructuredStringSearch(int userId, string? title, string? plot, string? character, string? person)
     {
         return _imdbContext.Database.SqlQueryRaw<MovieSearchResult>(
-            "SELECT tconst, primary_title AS PrimaryTitle FROM structured_string_search({0}, {1}, {2}, {3}, {4})", 
+            "SELECT tconst, primary_title AS PrimaryTitle FROM structured_string_search({0}, {1}, {2}, {3}, {4})",
             userId, title ?? "", plot ?? "", character ?? "", person ?? "").ToList();
     }
 
@@ -439,22 +416,22 @@ public class DataService : IDataService
 
     public IList<MovieSearchResult> ExactMatchTitles(params string[] keywords)
     {
-        var keywordParams = string.Join(", ", keywords.Select((k, i) => $"{{{i}}}"));
-        return _imdbContext.Database.SqlQueryRaw<MovieSearchResult>(
-            $"SELECT tconst, primary_title AS PrimaryTitle FROM exact_match_titles({keywordParams})", keywords.Cast<object>().ToArray()).ToList();
+        var placeholders = string.Join(", ", Enumerable.Range(0, keywords.Length).Select(i => $"{{{i}}}"));
+        var sql = $"SELECT tconst, primary_title AS PrimaryTitle FROM exact_match_titles({placeholders})";
+        return _imdbContext.Database.SqlQueryRaw<MovieSearchResult>(sql, keywords).ToList();
     }
 
     public IList<BestMatchResult> BestMatchTitles(params string[] keywords)
     {
-        var keywordParams = string.Join(", ", keywords.Select((k, i) => $"{{{i}}}"));
-        return _imdbContext.Database.SqlQueryRaw<BestMatchResult>(
-            $"SELECT tconst, primary_title AS PrimaryTitle, match_count AS MatchCount FROM best_match_titles({keywordParams})", keywords.Cast<object>().ToArray()).ToList();
+        var placeholders = string.Join(", ", Enumerable.Range(0, keywords.Length).Select(i => $"{{{i}}}"));
+        var sql = $"SELECT tconst, primary_title AS PrimaryTitle, match_count AS MatchCount FROM best_match_titles({placeholders})";
+        return _imdbContext.Database.SqlQueryRaw<BestMatchResult>(sql, keywords).ToList();
     }
 
     public IList<WordFrequencyResult> GetKeywordExpansionWords(params string[] keywords)
     {
-        var keywordParams = string.Join(", ", keywords.Select((k, i) => $"{{{i}}}"));
-        return _imdbContext.Database.SqlQueryRaw<WordFrequencyResult>(
-            $"SELECT word AS Word, freq AS Freq FROM keyword_expansion_words({keywordParams})", keywords.Cast<object>().ToArray()).ToList();
+        var placeholders = string.Join(", ", Enumerable.Range(0, keywords.Length).Select(i => $"{{{i}}}"));
+        var sql = $"SELECT word AS Word, freq AS Freq FROM keyword_expansion_words({placeholders})";
+        return _imdbContext.Database.SqlQueryRaw<WordFrequencyResult>(sql, keywords).ToList();
     }
 }
