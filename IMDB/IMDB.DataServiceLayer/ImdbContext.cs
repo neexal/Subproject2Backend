@@ -12,26 +12,26 @@ public class ImdbContext : DbContext
     public DbSet<Person> Persons { get; set; }
     public DbSet<Genre> Genres { get; set; }
     public DbSet<Profession> Professions { get; set; }
-    
+
     // Association entities
     public DbSet<MovieGenre> MovieGenres { get; set; }
     public DbSet<PersonProfession> PersonProfessions { get; set; }
     public DbSet<PersonKnownFor> PersonKnownFor { get; set; }
-    
+
     // Credit entities
     public DbSet<CastCredit> CastCredits { get; set; }
     public DbSet<CrewCredit> CrewCredits { get; set; }
     public DbSet<CastCharacter> CastCharacters { get; set; }
-    
+
     // Alternative title entities
     public DbSet<AlternativeTitle> AlternativeTitles { get; set; }
     public DbSet<AltTitleType> AltTitleTypes { get; set; }
     public DbSet<AltTitleAttribute> AltTitleAttributes { get; set; }
-    
+
     // Episode and rating entities
     public DbSet<Episode> Episodes { get; set; }
     public DbSet<ImdbRating> ImdbRatings { get; set; }
-    
+
     // Framework entities
     public DbSet<SearchHistory> SearchHistories { get; set; }
     public DbSet<UserTitleRating> UserTitleRatings { get; set; }
@@ -40,9 +40,9 @@ public class ImdbContext : DbContext
     public DbSet<UserTitleNote> UserTitleNotes { get; set; }
     public DbSet<UserPersonNote> UserPersonNotes { get; set; }
 
-    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    public ImdbContext(DbContextOptions<ImdbContext> options)
+        : base(options)
     {
-        optionsBuilder.UseNpgsql("Host=localhost;Database=imdb;Username=postgres;Password=admin");
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -58,7 +58,7 @@ public class ImdbContext : DbContext
             .HasDefaultValueSql("NOW()");
         modelBuilder.Entity<AppUser>().Property(u => u.LastLoginAt).HasColumnName("last_login_at");
         modelBuilder.Entity<AppUser>().Property(u => u.Status).HasColumnName("status");
-        
+
         // Movie configuration
         modelBuilder.Entity<Movie>().ToTable("movie");
         modelBuilder.Entity<Movie>().HasKey(m => m.MovieId);
@@ -422,6 +422,6 @@ public class ImdbContext : DbContext
             .HasForeignKey(ata => ata.AltId)
             .OnDelete(DeleteBehavior.Cascade);
     }
-    
-    
+
+
 }
