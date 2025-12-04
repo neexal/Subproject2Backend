@@ -1,8 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useParams } from 'react-router-dom';
-import { Container, Row, Col, Image, Spinner, Alert, Button, ListGroup } from 'react-bootstrap';
+import { Container, Row, Col, Image, Spinner, Alert, Button, ListGroup, Badge } from 'react-bootstrap';
 import { personService, frameworkService, tmdbService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import noPoster from '../assets/no-poster.png';
 
 const PersonDetail = () => {
     const { id } = useParams();
@@ -12,6 +13,7 @@ const PersonDetail = () => {
     const [error, setError] = useState(null);
     const [imageUrl, setImageUrl] = useState(null);
     const [isBookmarked, setIsBookmarked] = useState(false);
+    const [coPlayers, setCoPlayers] = useState([]);
 
     useEffect(() => {
         const fetchDetails = async () => {
@@ -22,6 +24,16 @@ const PersonDetail = () => {
                 if (response.data.nconst) {
                     const url = await tmdbService.getPersonImage(response.data.nconst);
                     setImageUrl(url);
+                }
+
+
+                if (response.data.primaryName) {
+                    try {
+                        const coPlayersResponse = await personService.getCoPlayers(response.data.primaryName);
+                        setCoPlayers(coPlayersResponse.data);
+                    } catch (e) {
+                        console.error("Failed to fetch co-players", e);
+                    }
                 }
 
                 if (user) {
@@ -58,7 +70,8 @@ const PersonDetail = () => {
             <Row>
                 <Col md={4}>
                     <Image
-                        src={imageUrl || "https://via.placeholder.com/300x450?text=No+Image"}
+                        src={imageUrl || noPoster}
+                        onError={(e) => { e.target.onerror = null; e.target.src = noPoster; }}
                         fluid rounded className="mb-3"
                     />
                     {user && (
@@ -97,7 +110,7 @@ const PersonDetail = () => {
                                         key={cp.nconst}
                                         variant="outline-light"
                                         size="sm"
-                                        href={`/search?q=${cp.primaryName}`} // Simple redirect to search as we don't have ID directly from this endpoint usually
+                                        href={`/search?q=${cp.primaryName}`}
                                     >
                                         {cp.primaryName} <Badge bg="secondary">{cp.frequency}</Badge>
                                     </Button>

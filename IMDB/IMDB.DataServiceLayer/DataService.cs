@@ -104,8 +104,8 @@ public class DataService : IDataService
     public IList<Movie> SearchMovies(string searchTerm, int page = 1, int pageSize = 50)
     {
         return _imdbContext.Movies
-            .Where(m => m.PrimaryTitle.Contains(searchTerm) ||
-                       (m.PlotSummary != null && m.PlotSummary.Contains(searchTerm)))
+            .Where(m => EF.Functions.ILike(m.PrimaryTitle, $"%{searchTerm}%") ||
+                       (m.PlotSummary != null && EF.Functions.ILike(m.PlotSummary, $"%{searchTerm}%")))
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
@@ -132,7 +132,7 @@ public class DataService : IDataService
     public IList<Person> SearchPersons(string searchTerm, int page = 1, int pageSize = 50)
     {
         return _imdbContext.Persons
-            .Where(p => p.PrimaryName.Contains(searchTerm))
+            .Where(p => EF.Functions.ILike(p.PrimaryName, $"%{searchTerm}%"))
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
@@ -227,15 +227,15 @@ public class DataService : IDataService
     public int GetMovieSearchCount(string searchTerm)
     {
         return _imdbContext.Movies
-            .Where(m => m.PrimaryTitle.Contains(searchTerm) ||
-                       (m.PlotSummary != null && m.PlotSummary.Contains(searchTerm)))
+            .Where(m => EF.Functions.ILike(m.PrimaryTitle, $"%{searchTerm}%") ||
+                       (m.PlotSummary != null && EF.Functions.ILike(m.PlotSummary, $"%{searchTerm}%")))
             .Count();
     }
 
     public int GetPersonSearchCount(string searchTerm)
     {
         return _imdbContext.Persons
-            .Where(p => p.PrimaryName.Contains(searchTerm))
+            .Where(p => EF.Functions.ILike(p.PrimaryName, $"%{searchTerm}%"))
             .Count();
     }
 

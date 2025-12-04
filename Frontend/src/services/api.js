@@ -10,7 +10,7 @@ const api = axios.create({
     },
 });
 
-// Add a request interceptor to attach the token
+
 api.interceptors.request.use(
     (config) => {
         const token = localStorage.getItem('token');
@@ -33,11 +33,11 @@ export const movieService = {
     getMovieDetails: (id) => api.get(`/movies/${id}/details`),
     searchMovies: (searchTerm, page = 1, pageSize = 12) => api.post('/movies/search', { searchTerm, page, pageSize }),
 
-    // Phase 2 methods
+
     structuredSearch: (userId, title, plot, character, person) =>
-        api.post('/movies/search/structured', { userId, title, plot, character, person }),
-    getSimilarMovies: (movieId) => api.get(`/movies/${movieId}/similar`),
-    getPopularActors: (movieId) => api.get(`/movies/${movieId}/popular-actors`),
+        api.post('/framework/search/structured', { userId, title, plot, character, person }),
+    getSimilarMovies: (movieId) => api.get(`/framework/movies/${movieId}/similar`),
+    getPopularActors: (movieId) => api.get(`/framework/movies/${movieId}/popular-actors`),
 };
 
 export const personService = {
@@ -46,23 +46,23 @@ export const personService = {
     getPersonDetails: (id) => api.get(`/persons/${id}/details`),
     searchPersons: (searchTerm, page = 1, pageSize = 12) => api.post('/persons/search', { searchTerm, page, pageSize }),
 
-    // Phase 2 methods
-    getCoPlayers: (actorName) => api.get(`/persons/coplayers/${actorName}`),
+
+    getCoPlayers: (actorName) => api.post('/framework/search/coplayers', { actorName }),
 };
 
 export const frameworkService = {
-    // Bookmarks
-    toggleMovieBookmark: (userId, movieId) => api.post('/framework/bookmark/movie', { userId, movieId }),
-    togglePersonBookmark: (userId, personId) => api.post('/framework/bookmark/person', { userId, personId }),
-    getUserMovieBookmarks: (userId) => api.get(`/framework/bookmarks/movie/${userId}`),
-    getUserPersonBookmarks: (userId) => api.get(`/framework/bookmarks/person/${userId}`),
 
-    // Ratings
+    toggleMovieBookmark: (userId, movieId) => api.post('/framework/bookmarks/movies/toggle', { userId, movieId }),
+    togglePersonBookmark: (userId, personId) => api.post('/framework/bookmarks/persons/toggle', { userId, personId }),
+    getUserMovieBookmarks: (userId) => api.get(`/framework/bookmarks/movies/${userId}`),
+    getUserPersonBookmarks: (userId) => api.get(`/framework/bookmarks/persons/${userId}`),
+
+
     rateMovie: (userId, movieId, rating) => api.post('/framework/rate', { userId, movieId, rating }),
-    getRatingHistory: (userId) => api.get(`/framework/ratings/${userId}`),
+    getRatingHistory: (userId) => api.get(`/framework/rating-history/${userId}`),
 
-    // History
-    getSearchHistory: (userId) => api.get(`/framework/history/${userId}`),
+
+    getSearchHistory: (userId) => api.get(`/framework/search-history/${userId}`),
 };
 
 export const tmdbService = {
@@ -77,7 +77,7 @@ export const tmdbService = {
                     return `https://image.tmdb.org/t/p/w200${person.profile_path}`;
                 }
             }
-            return null; // No image found
+            return null;
         } catch (error) {
             console.error("Error fetching TMDB image:", error);
             return null;

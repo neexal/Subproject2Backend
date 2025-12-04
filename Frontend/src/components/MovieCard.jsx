@@ -1,16 +1,24 @@
 import React from 'react';
-import { Card, Button } from 'react-bootstrap';
+import { Card } from 'react-bootstrap';
 import { Link } from 'react-router-dom';
+import noPoster from '../assets/no-poster.png';
 
 const MovieCard = ({ movie }) => {
     return (
         <Card className="h-100 shadow-sm text-white">
             {movie.posterUrl ? (
-                <Card.Img variant="top" src={movie.posterUrl} style={{ height: '350px', objectFit: 'cover' }} />
+                <Card.Img
+                    variant="top"
+                    src={movie.posterUrl}
+                    onError={(e) => { e.target.onerror = null; e.target.src = noPoster; }}
+                    style={{ height: '350px', objectFit: 'cover' }}
+                />
             ) : (
-                <div className="d-flex align-items-center justify-content-center bg-secondary" style={{ height: '350px' }}>
-                    <span>No Poster</span>
-                </div>
+                <Card.Img
+                    variant="top"
+                    src={noPoster}
+                    style={{ height: '350px', objectFit: 'cover' }}
+                />
             )}
             <Card.Body className="d-flex flex-column p-3">
                 <Card.Title>{movie.primaryTitle}</Card.Title>

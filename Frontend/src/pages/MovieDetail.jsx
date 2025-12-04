@@ -3,6 +3,7 @@ import { useParams } from 'react-router-dom';
 import { Container, Row, Col, Image, Badge, Spinner, Alert, Button, Form } from 'react-bootstrap';
 import { movieService, frameworkService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
+import noPoster from '../assets/no-poster.png';
 
 const MovieDetail = () => {
     const { id } = useParams();
@@ -13,14 +14,24 @@ const MovieDetail = () => {
     const [rating, setRating] = useState(0);
     const [isBookmarked, setIsBookmarked] = useState(false);
 
+
+    const [similarMovies, setSimilarMovies] = useState([]);
+
     useEffect(() => {
         const fetchDetails = async () => {
             try {
                 const response = await movieService.getMovieDetails(id);
                 setMovie(response.data);
 
+
+                try {
+                    const similarResponse = await movieService.getSimilarMovies(id);
+                    setSimilarMovies(similarResponse.data);
+                } catch (e) {
+                    console.error("Failed to fetch similar movies", e);
+                }
+
                 if (user) {
-                    // Check bookmark status (requires fetching all bookmarks, simplified here)
                     const bookmarks = await frameworkService.getUserMovieBookmarks(user.id);
                     const bookmarked = bookmarks.data.some(b => b.movieId === parseInt(id));
                     setIsBookmarked(bookmarked);
@@ -63,7 +74,11 @@ const MovieDetail = () => {
         <Container className="py-5">
             <Row>
                 <Col md={4}>
-                    <Image src={movie.posterUrl || "https://via.placeholder.com/300x450?text=No+Poster"} fluid rounded className="mb-3" />
+                    <Image
+                        src={movie.posterUrl || noPoster}
+                        onError={(e) => { e.target.onerror = null; e.target.src = noPoster; }}
+                        fluid rounded className="mb-3"
+                    />
                     {user && (
                         <div className="d-grid gap-2">
                             <Button
