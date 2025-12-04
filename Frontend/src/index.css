@@ -1,0 +1,115 @@
+:root {
+  --bg-dark: #141414;
+  --bg-card: #1f1f1f;
+  --text-primary: #ffffff;
+  --text-secondary: #b3b3b3;
+  --accent: #e50914;
+  --nav-bg: rgba(0, 0, 0, 0.9);
+}
+
+body {
+  background-color: var(--bg-dark);
+  color: var(--text-primary);
+  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: var(--bg-dark);
+}
+::-webkit-scrollbar-thumb {
+  background: #333;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+/* Navbar */
+.navbar {
+  background-color: var(--nav-bg) !important;
+  backdrop-filter: blur(10px);
+}
+
+/* Cards */
+.card {
+  background-color: var(--bg-card);
+  border: none;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  color: var(--text-primary);
+}
+
+.card:hover {
+  transform: scale(1.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.5);
+  z-index: 10;
+}
+
+.card-title {
+  font-weight: 600;
+  font-size: 1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.card-text {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+
+/* Buttons */
+.btn-primary {
+  background-color: var(--accent);
+  border-color: var(--accent);
+  font-weight: 600;
+}
+
+.btn-primary:hover {
+  background-color: #f40612;
+  border-color: #f40612;
+}
+
+.btn-outline-light:hover {
+  background-color: rgba(255,255,255,0.1);
+  color: white;
+}
+
+/* Inputs */
+.form-control {
+  background-color: #333;
+  border: 1px solid #444;
+  color: white;
+}
+
+.form-control:focus {
+  background-color: #444;
+  border-color: var(--accent);
+  color: white;
+  box-shadow: none;
+}
+
+/* Pagination */
+.page-link {
+  background-color: var(--bg-card);
+  border-color: #333;
+  color: var(--text-primary);
+}
+
+.page-link:hover {
+  background-color: #333;
+  color: white;
+}
+
+.page-item.active .page-link {
+  background-color: var(--accent);
+  border-color: var(--accent);
+}
+
+.page-item.disabled .page-link {
+  background-color: #111;
+  border-color: #333;
+}
