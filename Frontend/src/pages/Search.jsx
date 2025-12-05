@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Container, Form, Button, Row, Col, Spinner, Alert, ButtonGroup, ToggleButton } from 'react-bootstrap';
+import { useSearchParams } from 'react-router-dom';
 import { movieService, personService } from '../services/api';
 import MovieCard from '../components/MovieCard';
 import PersonCard from '../components/PersonCard';
@@ -8,7 +9,10 @@ import { useAuth } from '../context/AuthContext';
 
 const Search = () => {
     const { user } = useAuth();
-    const [searchTerm, setSearchTerm] = useState('');
+    const [searchParams, setSearchParams] = useSearchParams();
+    const queryParam = searchParams.get('q');
+
+    const [searchTerm, setSearchTerm] = useState(queryParam || '');
     const [searchType, setSearchType] = useState('movies'); // 'movies', 'persons', 'advanced'
 
     // Advanced Search State
@@ -24,30 +28,32 @@ const Search = () => {
     const [totalPages, setTotalPages] = useState(0);
     const pageSize = 12;
 
-    const handleSearch = async (e) => {
+    useEffect(() => {
+        if (queryParam) {
+            setSearchTerm(queryParam);
+            handleSearch(null, queryParam);
+        }
+    }, [queryParam]);
+
+    const handleSearch = async (e, termOverride) => {
         if (e) e.preventDefault();
+        const term = termOverride !== undefined ? termOverride : searchTerm;
 
         setLoading(true);
         setError(null);
         try {
             let response;
             if (searchType === 'movies') {
-                if (!searchTerm.trim()) return;
-                response = await movieService.searchMovies(searchTerm, page, pageSize);
+                if (!term.trim()) { setLoading(false); return; }
+                response = await movieService.searchMovies(term, page, pageSize);
             } else if (searchType === 'persons') {
-                if (!searchTerm.trim()) return;
-                response = await personService.searchPersons(searchTerm, page, pageSize);
+                if (!term.trim()) { setLoading(false); return; }
+                response = await personService.searchPersons(term, page, pageSize);
             } else if (searchType === 'advanced') {
-                // Advanced search requires login for history tracking in backend usually, 
-                // but we'll pass 0 if not logged in or handle as needed.
-                // The backend signature is structuredSearch(userId, ...).
                 const userId = user ? user.id : 0;
                 response = await movieService.structuredSearch(userId, advTitle, advPlot, advCharacter, advPerson);
-                // Structured search might not return paged response in the same format, 
-                // assuming it returns a list directly based on backend analysis.
-                // If backend returns List<MovieSearchResult>, we wrap it.
                 setResults(response.data);
-                setTotalPages(1); // No pagination for advanced search in this iteration
+                setTotalPages(1);
                 return;
             }
 
@@ -61,57 +67,62 @@ const Search = () => {
         }
     };
 
-    // Trigger search when page changes (only for basic search)
-    React.useEffect(() => {
+    // Trigger search when page changes (basic search only)
+    useEffect(() => {
         if (searchType !== 'advanced' && searchTerm) {
-            handleSearch();
+            handleSearch(null, searchTerm);
         }
     }, [page]);
 
-    // Reset page when search term or type changes
     const handleTypeChange = (val) => {
         setSearchType(val);
         setPage(1);
         setResults([]);
-        setSearchTerm('');
+        if (val !== 'advanced') {
+            setSearchTerm('');
+            setSearchParams({});
+        }
     };
 
     return (
-        <Container className="py-5">
-            <h1 className="mb-4 text-center">Search</h1>
+        <Container className="py-5 mt-5 fade-in">
+            <h1 className="mb-4 text-center display-4 fw-bold">Search</h1>
 
-            <div className="d-flex justify-content-center mb-4">
-                <ButtonGroup>
+            <div className="d-flex justify-content-center mb-5">
+                <ButtonGroup className="glass-panel p-1">
                     <ToggleButton
                         id="radio-movies"
                         type="radio"
-                        variant="outline-primary"
+                        variant={searchType === 'movies' ? 'primary' : 'outline-light'}
                         name="radio"
                         value="movies"
                         checked={searchType === 'movies'}
                         onChange={(e) => handleTypeChange(e.currentTarget.value)}
+                        className="rounded-pill border-0 px-4"
                     >
                         Movies
                     </ToggleButton>
                     <ToggleButton
                         id="radio-persons"
                         type="radio"
-                        variant="outline-primary"
+                        variant={searchType === 'persons' ? 'primary' : 'outline-light'}
                         name="radio"
                         value="persons"
                         checked={searchType === 'persons'}
                         onChange={(e) => handleTypeChange(e.currentTarget.value)}
+                        className="rounded-pill border-0 px-4"
                     >
                         People
                     </ToggleButton>
                     <ToggleButton
                         id="radio-advanced"
                         type="radio"
-                        variant="outline-primary"
+                        variant={searchType === 'advanced' ? 'primary' : 'outline-light'}
                         name="radio"
                         value="advanced"
                         checked={searchType === 'advanced'}
                         onChange={(e) => handleTypeChange(e.currentTarget.value)}
+                        className="rounded-pill border-0 px-4"
                     >
                         Advanced
                     </ToggleButton>
@@ -122,44 +133,45 @@ const Search = () => {
                 <Row className="justify-content-center">
                     <Col md={8}>
                         {searchType !== 'advanced' ? (
-                            <div className="d-flex gap-2">
+                            <div className="glass-panel p-2 d-flex">
                                 <Form.Control
                                     type="text"
                                     placeholder={`Search for ${searchType}...`}
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
+                                    className="bg-transparent border-0 text-white shadow-none"
                                 />
-                                <Button variant="primary" type="submit">Search</Button>
+                                <Button variant="primary" type="submit" className="rounded-pill px-4">Search</Button>
                             </div>
                         ) : (
-                            <div className="p-4 border rounded bg-dark text-white">
+                            <div className="glass-panel p-4">
                                 <Row className="g-3">
                                     <Col md={6}>
                                         <Form.Group>
-                                            <Form.Label>Title</Form.Label>
-                                            <Form.Control type="text" value={advTitle} onChange={e => setAdvTitle(e.target.value)} />
+                                            <Form.Label className="text-secondary small text-uppercase">Title</Form.Label>
+                                            <Form.Control className="bg-dark border-secondary text-white" type="text" value={advTitle} onChange={e => setAdvTitle(e.target.value)} />
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group>
-                                            <Form.Label>Plot Keyword</Form.Label>
-                                            <Form.Control type="text" value={advPlot} onChange={e => setAdvPlot(e.target.value)} />
+                                            <Form.Label className="text-secondary small text-uppercase">Plot Keyword</Form.Label>
+                                            <Form.Control className="bg-dark border-secondary text-white" type="text" value={advPlot} onChange={e => setAdvPlot(e.target.value)} />
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group>
-                                            <Form.Label>Character Name</Form.Label>
-                                            <Form.Control type="text" value={advCharacter} onChange={e => setAdvCharacter(e.target.value)} />
+                                            <Form.Label className="text-secondary small text-uppercase">Character Name</Form.Label>
+                                            <Form.Control className="bg-dark border-secondary text-white" type="text" value={advCharacter} onChange={e => setAdvCharacter(e.target.value)} />
                                         </Form.Group>
                                     </Col>
                                     <Col md={6}>
                                         <Form.Group>
-                                            <Form.Label>Person Name</Form.Label>
-                                            <Form.Control type="text" value={advPerson} onChange={e => setAdvPerson(e.target.value)} />
+                                            <Form.Label className="text-secondary small text-uppercase">Person Name</Form.Label>
+                                            <Form.Control className="bg-dark border-secondary text-white" type="text" value={advPerson} onChange={e => setAdvPerson(e.target.value)} />
                                         </Form.Group>
                                     </Col>
-                                    <Col xs={12}>
-                                        <Button variant="primary" type="submit" className="w-100">Advanced Search</Button>
+                                    <Col xs={12} className="mt-4">
+                                        <Button variant="primary" type="submit" className="w-100 rounded-pill">Advanced Search</Button>
                                     </Col>
                                 </Row>
                             </div>
@@ -169,27 +181,29 @@ const Search = () => {
             </Form>
 
             {loading && (
-                <div className="text-center">
-                    <Spinner animation="border" />
+                <div className="text-center py-5">
+                    <Spinner animation="border" variant="primary" />
                 </div>
             )}
 
             {error && <Alert variant="danger">{error}</Alert>}
 
-            <Row xs={1} md={2} lg={4} className="g-4">
+            <div className="bento-grid">
                 {results.map(item => (
-                    <Col key={searchType === 'persons' ? item.personId : item.movieId}>
+                    <div key={searchType === 'persons' ? item.personId : item.movieId}>
                         {searchType === 'persons' ? (
                             <PersonCard person={item} />
                         ) : (
                             <MovieCard movie={item} />
                         )}
-                    </Col>
+                    </div>
                 ))}
-            </Row>
+            </div>
 
-            {results.length > 0 && searchType !== 'advanced' && (
-                <CustomPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+            {results.length > 0 && searchType !== 'advanced' && totalPages > 1 && (
+                <div className="mt-5">
+                    <CustomPagination page={page} totalPages={totalPages} onPageChange={setPage} />
+                </div>
             )}
         </Container>
     );

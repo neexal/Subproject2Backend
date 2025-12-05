@@ -1,34 +1,32 @@
 import React from 'react';
-import { Card } from 'react-bootstrap';
+
 import { Link } from 'react-router-dom';
 import noPoster from '../assets/no-poster.png';
 
 const MovieCard = ({ movie }) => {
     return (
-        <Card className="h-100 shadow-sm text-white">
-            {movie.posterUrl ? (
-                <Card.Img
-                    variant="top"
-                    src={movie.posterUrl}
+        <div className="glass-panel position-relative h-100 hover-scale">
+            <div className="ratio ratio-2x3">
+                <img
+                    src={movie.posterUrl || noPoster}
                     onError={(e) => { e.target.onerror = null; e.target.src = noPoster; }}
-                    style={{ height: '350px', objectFit: 'cover' }}
+                    alt={movie.primaryTitle}
+                    className="w-100 h-100 object-fit-cover"
                 />
-            ) : (
-                <Card.Img
-                    variant="top"
-                    src={noPoster}
-                    style={{ height: '350px', objectFit: 'cover' }}
-                />
-            )}
-            <Card.Body className="d-flex flex-column p-3">
-                <Card.Title>{movie.primaryTitle}</Card.Title>
-                <Card.Text className="mb-2">
-                    <span className="badge bg-warning text-dark me-2">★ {movie.averageRating ? movie.averageRating.toFixed(1) : 'N/A'}</span>
-                    <small>{movie.startYear}</small>
-                </Card.Text>
-                <Link to={`/movies/${movie.movieId}`} className="stretched-link"></Link>
-            </Card.Body>
-        </Card>
+            </div>
+            <div className="p-3">
+                <h6 className="text-white fw-bold text-truncate mb-1" title={movie.primaryTitle}>
+                    {movie.primaryTitle}
+                </h6>
+                <div className="d-flex justify-content-between align-items-center small">
+                    <span className="text-secondary">{movie.startYear}</span>
+                    <span className="text-warning fw-bold">
+                        ★ {movie.averageRating ? movie.averageRating.toFixed(1) : 'N/A'}
+                    </span>
+                </div>
+            </div>
+            <Link to={`/movies/${movie.movieId}`} className="stretched-link"></Link>
+        </div>
     );
 };
 

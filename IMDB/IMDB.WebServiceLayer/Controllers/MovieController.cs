@@ -210,4 +210,18 @@ public class MovieController : ControllerBase
             Attributes = altTitle.AltTitleAttributes.Select(ata => ata.AttributeName).ToList()
         };
     }
+
+    [HttpGet("{id:int}/popular-cast")]
+    public IActionResult GetPopularCast(int id)
+    {
+        var popularCast = _service.GetPopularActorsInMovie(id);
+        return Ok(popularCast);
+    }
+
+    [HttpGet("{id:int}/similar")]
+    public IActionResult GetSimilarMovies(int id)
+    {
+        var similarMovies = _service.GetSimilarMovies(id);
+        return Ok(similarMovies);
+    }
 }

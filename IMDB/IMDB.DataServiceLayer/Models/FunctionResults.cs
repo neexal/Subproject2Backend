@@ -71,10 +71,12 @@ public class PopularActorResult
 public class SimilarMovieResult
 {
     public string Tconst { get; set; } = string.Empty;
+    public int MovieId { get; set; }
     public string PrimaryTitle { get; set; } = string.Empty;
-    public int SharedGenres { get; set; }
-    public int YearDiff { get; set; }
-    public int SimilarityScore { get; set; }
+    public int? SharedGenres { get; set; }
+    public int? YearDiff { get; set; }
+    public int? SimilarityScore { get; set; }
+    public string? PosterUrl { get; set; }
 }
 
 public class PersonWordResult

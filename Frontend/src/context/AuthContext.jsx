@@ -21,9 +21,9 @@ export const AuthProvider = ({ children }) => {
                 } else {
                     // Assuming the token has nameid (userId) and unique_name (username)
                     setUser({
-                        id: parseInt(decoded.nameid || decoded.sub), // Adjust based on your token claims
-                        username: decoded.unique_name || decoded.name,
-                        email: decoded.email
+                        id: parseInt(decoded.nameid || decoded.sub || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier"]),
+                        username: decoded.unique_name || decoded.name || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/name"],
+                        email: decoded.email || decoded["http://schemas.xmlsoap.org/ws/2005/05/identity/claims/emailaddress"]
                     });
                 }
             } catch (error) {

@@ -272,8 +272,27 @@ public class DataService : IDataService
 
     public string TogglePersonBookmark(int userId, int personId)
     {
-        return _imdbContext.Database.SqlQueryRaw<string>(
-            "SELECT toggle_person_bookmark({0}, {1}) AS result", userId, personId).First();
+        var existingBookmark = _imdbContext.UserPersonBookmarks
+            .FirstOrDefault(upb => upb.UserId == userId && upb.PersonId == personId);
+
+        if (existingBookmark != null)
+        {
+            _imdbContext.UserPersonBookmarks.Remove(existingBookmark);
+            _imdbContext.SaveChanges();
+            return "Person bookmark removed";
+        }
+        else
+        {
+            var newBookmark = new UserPersonBookmark
+            {
+                UserId = userId,
+                PersonId = personId,
+                BookmarkedAt = System.DateTime.UtcNow
+            };
+            _imdbContext.UserPersonBookmarks.Add(newBookmark);
+            _imdbContext.SaveChanges();
+            return "Person bookmarked";
+        }
     }
 
     public int AddMovieNote(int userId, int movieId, string note)
@@ -405,7 +424,7 @@ public class DataService : IDataService
     public IList<SimilarMovieResult> GetSimilarMovies(int movieId)
     {
         return _imdbContext.Database.SqlQueryRaw<SimilarMovieResult>(
-            "SELECT tconst, primary_title AS PrimaryTitle, shared_genres AS SharedGenres, year_diff AS YearDiff, similarity_score AS SimilarityScore FROM similar_movies_by_genre_year({0})", movieId).ToList();
+            "SELECT s.tconst, m.movie_id AS MovieId, s.primary_title AS PrimaryTitle, s.shared_genres AS SharedGenres, s.year_diff AS YearDiff, s.similarity_score AS SimilarityScore, m.poster_url AS PosterUrl FROM similar_movies_by_genre_year({0}) s JOIN movie m ON s.tconst = m.tconst", movieId).ToList();
     }
 
     public IList<PersonWordResult> GetPersonWords(string personName, int topN = 20)

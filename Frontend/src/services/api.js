@@ -25,6 +25,7 @@ api.interceptors.request.use(
 export const authService = {
     login: (email, password) => api.post('/auth/login', { email, password }),
     register: (username, email, password) => api.post('/auth/register', { username, email, password }),
+    changePassword: (currentPassword, newPassword) => api.post('/auth/change-password', { currentPassword, newPassword }),
 };
 
 export const movieService = {
@@ -36,8 +37,8 @@ export const movieService = {
 
     structuredSearch: (userId, title, plot, character, person) =>
         api.post('/framework/search/structured', { userId, title, plot, character, person }),
-    getSimilarMovies: (movieId) => api.get(`/framework/movies/${movieId}/similar`),
-    getPopularActors: (movieId) => api.get(`/framework/movies/${movieId}/popular-actors`),
+    getSimilarMovies: (movieId) => api.get(`/movies/${movieId}/similar`),
+    getPopularActors: (movieId) => api.get(`/movies/${movieId}/popular-cast`),
 };
 
 export const personService = {
@@ -45,9 +46,10 @@ export const personService = {
     getPersonById: (id) => api.get(`/persons/${id}`),
     getPersonDetails: (id) => api.get(`/persons/${id}/details`),
     searchPersons: (searchTerm, page = 1, pageSize = 12) => api.post('/persons/search', { searchTerm, page, pageSize }),
+    getPersonRecentMovies: (id) => api.get(`/persons/${id}/recent-movies`),
 
-
-    getCoPlayers: (actorName) => api.post('/framework/search/coplayers', { actorName }),
+    getCoPlayers: (name) => api.get(`/persons/name/${encodeURIComponent(name)}/coplayers`),
+    getPersonWords: (name) => api.get(`/persons/name/${encodeURIComponent(name)}/words`),
 };
 
 export const frameworkService = {
@@ -57,6 +59,9 @@ export const frameworkService = {
     getUserMovieBookmarks: (userId) => api.get(`/framework/bookmarks/movies/${userId}`),
     getUserPersonBookmarks: (userId) => api.get(`/framework/bookmarks/persons/${userId}`),
 
+    addMovieNote: (userId, movieId, note) => api.post('/framework/notes/movies', { userId, movieId, note }),
+    addPersonNote: (userId, personId, note) => api.post('/framework/notes/persons', { userId, personId, note }),
+    getUserNotes: (userId) => api.get(`/framework/notes/${userId}`),
 
     rateMovie: (userId, movieId, rating) => api.post('/framework/rate', { userId, movieId, rating }),
     getRatingHistory: (userId) => api.get(`/framework/rating-history/${userId}`),

@@ -173,4 +173,18 @@ public class PersonController : ControllerBase
             MovieId = castCredit.MovieId
         };
     }
+
+    [HttpGet("name/{name}/coplayers")]
+    public IActionResult GetCoPlayers(string name)
+    {
+        var coPlayers = _service.FindCoPlayers(name);
+        return Ok(coPlayers);
+    }
+
+    [HttpGet("name/{name}/words")]
+    public IActionResult GetPersonWords(string name)
+    {
+        var words = _service.GetPersonWords(name);
+        return Ok(words);
+    }
 }
