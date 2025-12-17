@@ -53,6 +53,11 @@ public class PersonController : ControllerBase
     public IActionResult SearchPersons([FromBody] PersonSearchRequest request)
     {
         if (request.PageSize > 100) request.PageSize = 50;
+
+        if (request.UserId.HasValue && request.UserId.Value > 0)
+        {
+            _service.AddSearchHistory(request.UserId.Value, request.SearchTerm);
+        }
         
         var persons = _service.SearchPersons(request.SearchTerm, request.Page, request.PageSize);
         var personDtos = persons.Select(MapToPersonDto).ToList();
@@ -174,7 +179,7 @@ public class PersonController : ControllerBase
         };
     }
 
-    [HttpGet("name/{name}/coplayers")]
+    [HttpGet("coplayers/{name}")]
     public IActionResult GetCoPlayers(string name)
     {
         var coPlayers = _service.FindCoPlayers(name);

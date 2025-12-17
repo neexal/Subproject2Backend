@@ -1,20 +1,23 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Image, Badge, Spinner, Alert, Button, Form } from 'react-bootstrap';
-import { movieService, frameworkService } from '../services/api';
+import { movieService, frameworkService, tmdbService } from '../services/api';
 import StarRating from '../components/StarRating';
 import NoteModal from '../components/NoteModal';
 import { useAuth } from '../context/AuthContext';
 import { useToast } from '../context/ToastContext';
-import noPoster from '../assets/no-poster.png';
 
 const MovieDetail = () => {
     const { id } = useParams();
     const { user } = useAuth();
+    const { addToast } = useToast();
     const [movie, setMovie] = useState(null);
+    const noPoster = "https://placehold.co/300x450/1a1d29/ffffff?text=No+Poster";
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [rating, setRating] = useState(0);
+    const [userRating, setUserRating] = useState(null); // User's existing rating
+    const [externalRating, setExternalRating] = useState(null); // TMDB/IMDB rating
     const [isBookmarked, setIsBookmarked] = useState(false);
     const [showNoteModal, setShowNoteModal] = useState(false);
 
@@ -47,6 +50,22 @@ const MovieDetail = () => {
 
                     const popularResponse = await movieService.getPopularActors(id);
                     setPopularCast(popularResponse.data);
+
+                    // Fetch external TMDB rating if tconst available
+                    if (response.data.tconst) {
+                        console.log(`[MovieDetail] Fetching TMDB rating for tconst: ${response.data.tconst}`);
+                        try {
+                            const tmdbRating = await tmdbService.getMovieRating(response.data.tconst);
+                            console.log(`[MovieDetail] TMDB rating received:`, tmdbRating);
+                            if (tmdbRating) {
+                                setExternalRating(tmdbRating);
+                            }
+                        } catch (e) {
+                            console.error('[MovieDetail] Failed to fetch TMDB rating:', e);
+                        }
+                    } else {
+                        console.log('[MovieDetail] No tconst available for TMDB rating');
+                    }
                 } catch (e) {
                     console.error("Failed to fetch advanced movie data", e);
                 }
@@ -56,8 +75,15 @@ const MovieDetail = () => {
                         const bookmarks = await frameworkService.getUserMovieBookmarks(user.id);
                         const bookmarked = bookmarks.data.some(b => b.movieId === parseInt(id));
                         setIsBookmarked(bookmarked);
+
+                        // Fetch user's existing rating
+                        const userRatingResponse = await frameworkService.getUserMovieRating(user.id, parseInt(id));
+                        if (userRatingResponse.data.rating) {
+                            setUserRating(userRatingResponse.data.rating);
+                            setRating(userRatingResponse.data.rating);
+                        }
                     } catch (e) {
-                        console.error("Failed to fetch bookmarks", e);
+                        console.error("Failed to fetch bookmarks/rating", e);
                     }
                 }
             } catch (err) {
@@ -74,6 +100,12 @@ const MovieDetail = () => {
         if (!user) return addToast('Please login to rate', 'warning');
         try {
             await frameworkService.rateMovie(user.id, parseInt(id), rating);
+            setUserRating(rating);
+
+            // Refresh movie data to get updated average rating
+            const response = await movieService.getMovieDetails(id);
+            setMovie(response.data);
+
             addToast('Rating submitted!', 'success');
         } catch (err) {
             addToast('Failed to submit rating', 'danger');
@@ -206,10 +238,32 @@ const MovieDetail = () => {
                             <span>{movie.startYear}</span>
                             <span>•</span>
                             <span>{movie.runTimeMinutes} min</span>
-                            <span>•</span>
-                            <span className="d-flex align-items-center text-gold">
-                                <span className="me-1">★</span> {movie.averageRating} <span className="fs-6 ms-1 text-secondary">({movie.voteCount})</span>
-                            </span>
+                        </div>
+
+                        {/* Rating Display Section */}
+                        <div className="glass-panel p-4 mb-4">
+                            <div className="d-flex flex-column gap-3">
+                                <div>
+                                    <div className="text-secondary small text-uppercase mb-2">IMDB Rating</div>
+                                    <div className="d-flex align-items-center">
+                                        <span className="display-5 fw-bold text-gold me-2">★ {movie.averageRating ? movie.averageRating.toFixed(1) : 'N/A'}</span>
+                                        <span className="text-secondary">/10</span>
+                                    </div>
+                                    <div className="text-secondary small mt-1">Based on {movie.voteCount || 0} votes</div>
+                                </div>
+                                {userRating && (
+                                    <div className="pt-3 border-top border-secondary">
+                                        <div className="text-secondary small text-uppercase mb-1">Your Rating</div>
+                                        <div className="text-primary fs-4 fw-bold">★ {userRating}/10</div>
+                                    </div>
+                                )}
+                                {externalRating && (
+                                    <div className="pt-3 border-top border-secondary">
+                                        <div className="text-secondary small text-uppercase mb-1">TMDB Rating</div>
+                                        <div className="text-white-50 fs-5">★ {externalRating.toFixed(1)}/10</div>
+                                    </div>
+                                )}
+                            </div>
                         </div>
 
                         <div className="mb-5">
@@ -248,9 +302,9 @@ const MovieDetail = () => {
                                     <div className="d-flex flex-column gap-2" style={{ maxHeight: '400px', overflowY: 'auto' }}>
                                         {displayedCast.map(c => (
                                             <div key={c.castId || c.nconst} className="d-flex justify-content-between">
-                                                <a href={`/persons/${c.personId || '#'}`} className="text-action fw-medium hover-underline text-truncate me-2">
+                                                <Link to={`/persons/${c.personId || '#'}`} className="text-action fw-medium hover-underline text-truncate me-2">
                                                     {c.personName || c.primaryName}
-                                                </a>
+                                                </Link>
                                                 <span className="text-secondary small text-end text-truncate w-50">
                                                     {c.characters ? `as ${c.characters.join(', ')}` : (c.weightedAverage ? `Rating: ${c.weightedAverage}` : '')}
                                                 </span>
@@ -267,7 +321,7 @@ const MovieDetail = () => {
                                 <div className="d-flex overflow-auto gap-4 py-2 pb-4" style={{ scrollbarWidth: 'thin' }}>
                                     {similarMovies.map(m => (
                                         <div key={m.movieId} style={{ minWidth: '180px', maxWidth: '180px' }}>
-                                            <a href={`/movies/${m.movieId}`} className="text-decoration-none">
+                                            <Link to={`/movies/${m.movieId}`} className="text-decoration-none">
                                                 <div className="glass-panel h-100 hover-scale position-relative overflow-hidden">
                                                     <div className="ratio ratio-2x3">
                                                         <img
@@ -282,7 +336,7 @@ const MovieDetail = () => {
                                                         <small className="text-white-50">{m.yearDiff === 0 ? 'Same Year' : `${Math.abs(m.yearDiff)} yrs apart`}</small>
                                                     </div>
                                                 </div>
-                                            </a>
+                                            </Link>
                                         </div>
                                     ))}
                                 </div>

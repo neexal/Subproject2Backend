@@ -73,6 +73,29 @@ a:hover {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
   gap: 1.5rem;
+  justify-items: start;
+}
+
+@media (max-width: 768px) {
+  .bento-grid {
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: 1rem;
+  }
+}
+
+/* Movie Card Portrait Style */
+.movie-card-portrait {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.movie-card-portrait:hover {
+  transform: scale(1.05);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.6);
+}
+
+.movie-card-portrait .ratio {
+  border-radius: 12px 12px 0 0;
 }
 
 /* Animations */
@@ -207,4 +230,52 @@ a:hover {
 
 ::-webkit-scrollbar-thumb:hover {
   background: #4b5563;
+}
+
+/* Additional Utilities */
+.hover-underline {
+  text-decoration: none;
+  position: relative;
+}
+
+.hover-underline:hover {
+  text-decoration: underline;
+}
+
+.hover-opacity-100:hover {
+  opacity: 1 !important;
+}
+
+.tracking-wider {
+  letter-spacing: 0.05em;
+}
+
+.object-fit-cover {
+  object-fit: cover;
+}
+
+.text-action {
+  color: var(--color-action);
+}
+
+.text-action:hover {
+  color: #93c5fd;
+}
+
+.custom-tabs .nav-link {
+  color: var(--text-secondary);
+  border: none;
+  background: transparent;
+}
+
+.custom-tabs .nav-link.active {
+  background: rgba(96, 165, 250, 0.2);
+  color: var(--color-action);
+  border-radius: 8px;
+}
+
+.custom-tabs .nav-link:hover {
+  color: var(--text-primary);
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
 }

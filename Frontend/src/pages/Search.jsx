@@ -42,17 +42,42 @@ const Search = () => {
         setLoading(true);
         setError(null);
         try {
+            const userId = user ? user.id : null;
             let response;
             if (searchType === 'movies') {
                 if (!term.trim()) { setLoading(false); return; }
-                response = await movieService.searchMovies(term, page, pageSize);
+                response = await movieService.searchMovies(term, page, pageSize, userId);
             } else if (searchType === 'persons') {
                 if (!term.trim()) { setLoading(false); return; }
-                response = await personService.searchPersons(term, page, pageSize);
+                response = await personService.searchPersons(term, page, pageSize, userId);
             } else if (searchType === 'advanced') {
                 const userId = user ? user.id : 0;
                 response = await movieService.structuredSearch(userId, advTitle, advPlot, advCharacter, advPerson);
-                setResults(response.data);
+                
+                // Transform MovieSearchResult to MovieDto format by fetching full movie data
+                const transformedResults = await Promise.all(
+                    response.data.map(async (result) => {
+                        try {
+                            // Fetch full movie data using tconst to get movieId
+                            const movieResponse = await movieService.getMovieByTconst(result.tconst);
+                            return movieResponse.data;
+                        } catch (err) {
+                            console.error(`Failed to fetch movie for tconst ${result.tconst}:`, err);
+                            // Return a minimal object with tconst and title if fetch fails
+                            return {
+                                movieId: null,
+                                tconst: result.tconst,
+                                primaryTitle: result.primaryTitle,
+                                startYear: null,
+                                averageRating: null
+                            };
+                        }
+                    })
+                );
+                
+                // Filter out any results without movieId
+                const validResults = transformedResults.filter(m => m.movieId !== null);
+                setResults(validResults);
                 setTotalPages(1);
                 return;
             }

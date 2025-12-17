@@ -31,8 +31,9 @@ export const authService = {
 export const movieService = {
     getMovies: (page = 1, pageSize = 12) => api.get(`/movies?page=${page}&pageSize=${pageSize}`),
     getMovieById: (id) => api.get(`/movies/${id}`),
+    getMovieByTconst: (tconst) => api.get(`/movies/tconst/${tconst}`),
     getMovieDetails: (id) => api.get(`/movies/${id}/details`),
-    searchMovies: (searchTerm, page = 1, pageSize = 12) => api.post('/movies/search', { searchTerm, page, pageSize }),
+    searchMovies: (term, page = 1, pageSize = 12, userId = null) => api.post('/movies/search', { searchTerm: term, page, pageSize, userId }),
 
 
     structuredSearch: (userId, title, plot, character, person) =>
@@ -44,10 +45,9 @@ export const movieService = {
 export const personService = {
     getPersons: (page = 1, pageSize = 12) => api.get(`/persons?page=${page}&pageSize=${pageSize}`),
     getPersonById: (id) => api.get(`/persons/${id}`),
-    getPersonDetails: (id) => api.get(`/persons/${id}/details`),
-    searchPersons: (searchTerm, page = 1, pageSize = 12) => api.post('/persons/search', { searchTerm, page, pageSize }),
+    getPersonDetails: ((id) => api.get(`/persons/${id}/details`)),
+    searchPersons: (term, page = 1, pageSize = 12, userId = null) => api.post('/persons/search', { searchTerm: term, page, pageSize, userId }),
     getPersonRecentMovies: (id) => api.get(`/persons/${id}/recent-movies`),
-
     getCoPlayers: (name) => api.get(`/persons/name/${encodeURIComponent(name)}/coplayers`),
     getPersonWords: (name) => api.get(`/persons/name/${encodeURIComponent(name)}/words`),
 };
@@ -64,6 +64,7 @@ export const frameworkService = {
     getUserNotes: (userId) => api.get(`/framework/notes/${userId}`),
 
     rateMovie: (userId, movieId, rating) => api.post('/framework/rate', { userId, movieId, rating }),
+    getUserMovieRating: (userId, movieId) => api.get(`/framework/rating/${userId}/${movieId}`),
     getRatingHistory: (userId) => api.get(`/framework/rating-history/${userId}`),
 
 
@@ -85,6 +86,65 @@ export const tmdbService = {
             return null;
         } catch (error) {
             console.error("Error fetching TMDB image:", error);
+            return null;
+        }
+    },
+    getMovieImage: async (tconst) => {
+        try {
+            const findUrl = `https://api.themoviedb.org/3/find/${tconst}?api_key=${TMDB_API_KEY}&external_source=imdb_id`;
+            const findResponse = await axios.get(findUrl);
+
+            // Check movies
+            if (findResponse.data.movie_results && findResponse.data.movie_results.length > 0) {
+                const movie = findResponse.data.movie_results[0];
+                if (movie.poster_path) {
+                    return `https://image.tmdb.org/t/p/w300${movie.poster_path}`;
+                }
+            }
+
+            // Check TV shows
+            if (findResponse.data.tv_results && findResponse.data.tv_results.length > 0) {
+                const tv = findResponse.data.tv_results[0];
+                if (tv.poster_path) {
+                    return `https://image.tmdb.org/t/p/w300${tv.poster_path}`;
+                }
+            }
+
+            // Check TV episodes (use still path or show poster if available)
+            if (findResponse.data.tv_episode_results && findResponse.data.tv_episode_results.length > 0) {
+                const ep = findResponse.data.tv_episode_results[0];
+                if (ep.still_path) {
+                    return `https://image.tmdb.org/t/p/w300${ep.still_path}`;
+                }
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Error fetching TMDB movie image:", error);
+            return null;
+        }
+    },
+
+    getMovieRating: async (tconst) => {
+        try {
+            const findUrl = `https://api.themoviedb.org/3/find/${tconst}?api_key=${TMDB_API_KEY}&external_source=imdb_id`;
+            const findResponse = await axios.get(findUrl);
+
+            // Check movie results for rating
+            if (findResponse.data.movie_results && findResponse.data.movie_results.length > 0) {
+                const movie = findResponse.data.movie_results[0];
+                return movie.vote_average || null;
+            }
+
+            // Check TV results
+            if (findResponse.data.tv_results && findResponse.data.tv_results.length > 0) {
+                const tv = findResponse.data.tv_results[0];
+                return tv.vote_average || null;
+            }
+
+            return null;
+        } catch (error) {
+            console.error("Error fetching TMDB movie rating:", error);
             return null;
         }
     }

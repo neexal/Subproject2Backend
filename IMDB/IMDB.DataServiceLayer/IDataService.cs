@@ -55,6 +55,7 @@ public interface IDataService
     IList<UserRatingResult> GetRatingHistory(int userId);
     IList<MovieSearchResult> StringSearch(int userId, string searchString);
     string RateMovie(int userId, int movieId, int rating);
+    UserTitleRating? GetUserMovieRating(int userId, int movieId);
     IList<MovieSearchResult> StructuredStringSearch(int userId, string? title, string? plot, string? character, string? person);
     IList<PersonSearchResult> FindName(int userId, string searchString);
     IList<CoPlayerResult> FindCoPlayers(string actorName);
@@ -64,5 +65,6 @@ public interface IDataService
     IList<MovieSearchResult> ExactMatchTitles(params string[] keywords);
     IList<BestMatchResult> BestMatchTitles(params string[] keywords);
     IList<WordFrequencyResult> GetKeywordExpansionWords(params string[] keywords);
+    void AddSearchHistory(int userId, string queryText);
 }
 

@@ -1,18 +1,18 @@
 import React, { useEffect, useState } from 'react';
-import { useParams } from 'react-router-dom';
+import { useParams, Link } from 'react-router-dom';
 import { Container, Row, Col, Image, Spinner, Alert, Button, ListGroup, Badge } from 'react-bootstrap';
 import { personService, frameworkService, tmdbService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import NoteModal from '../components/NoteModal';
+import WordCloud from '../components/WordCloud';
 import { useToast } from '../context/ToastContext';
-import noPoster from '../assets/no-poster.png';
-
 const PersonDetail = () => {
     const { id } = useParams();
 
     const { user } = useAuth();
     const { addToast } = useToast();
     const [person, setPerson] = useState(null);
+    const noPoster = "https://placehold.co/300x450/1a1d29/ffffff?text=No+Image";
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [imageUrl, setImageUrl] = useState(null);
@@ -174,7 +174,7 @@ const PersonDetail = () => {
                             <div className="d-flex overflow-auto gap-4 py-2 pb-3" style={{ scrollbarWidth: 'thin' }}>
                                 {person.knownFor && person.knownFor.map(m => (
                                     <div key={m.movieId} style={{ minWidth: '160px', maxWidth: '160px' }}>
-                                        <a href={`/movies/${m.movieId}`} className="text-decoration-none">
+                                        <Link to={`/movies/${m.movieId}`} className="text-decoration-none">
                                             <div className="glass-panel h-100 hover-scale position-relative overflow-hidden">
                                                 <div className="ratio ratio-2x3">
                                                     <img
@@ -189,7 +189,7 @@ const PersonDetail = () => {
                                                     <small className="text-white-50">{m.startYear}</small>
                                                 </div>
                                             </div>
-                                        </a>
+                                        </Link>
                                     </div>
                                 ))}
                             </div>
@@ -205,7 +205,8 @@ const PersonDetail = () => {
                                                 size="sm"
                                                 as="a"
                                                 href={`/search?q=${encodeURIComponent(cp.primaryName)}`}
-                                                className="rounded-pill px-3 d-flex align-items-center gap-2 border-secondary text-white-50 hover-text-white"
+                                                className="rounded-pill px-3 d-flex align-items-center gap-2 border-secondary text-white-50"
+                                                style={{ textDecoration: 'none' }}
                                             >
                                                 {cp.primaryName} <Badge bg="secondary" className="text-dark bg-white">{cp.frequency}</Badge>
                                             </Button>
@@ -216,22 +217,11 @@ const PersonDetail = () => {
 
                             {words.length > 0 && (
                                 <div className="mt-5">
-                                    <h4 className="text-gradient mb-4">Common Words</h4>
-                                    <div className="d-flex flex-wrap gap-2">
-                                        {words.map((w, index) => (
-                                            <Badge
-                                                key={index}
-                                                bg="dark"
-                                                className="border border-secondary fw-light px-3 py-2"
-                                                style={{
-                                                    fontSize: `${Math.min(1 + w.frequency / 5, 2)}rem`,
-                                                    opacity: 0.8 + (w.frequency / 20)
-                                                }}
-                                            >
-                                                {w.word}
-                                            </Badge>
-                                        ))}
-                                    </div>
+                                    <h4 className="text-gradient mb-4">Characteristic Words</h4>
+                                    <p className="text-secondary small mb-3">
+                                        Words frequently associated with this person's work
+                                    </p>
+                                    <WordCloud words={words} maxWords={15} />
                                 </div>
                             )}
                         </div>

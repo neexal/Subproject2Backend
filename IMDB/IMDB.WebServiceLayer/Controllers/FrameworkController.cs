@@ -69,6 +69,12 @@ public class FrameworkController : ControllerBase
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[Error] AddMovieNote failed: {ex.Message}");
+            Console.WriteLine(ex.StackTrace);
+            if (ex.InnerException != null)
+            {
+                Console.WriteLine($"[Inner] {ex.InnerException.Message}");
+            }
             return BadRequest(new { Message = ex.Message });
         }
     }
@@ -84,6 +90,7 @@ public class FrameworkController : ControllerBase
         }
         catch (Exception ex)
         {
+            Console.WriteLine($"[Error] AddPersonNote failed: {ex.Message}");
             return BadRequest(new { Message = ex.Message });
         }
     }
@@ -183,6 +190,25 @@ public class FrameworkController : ControllerBase
         {
             var result = _service.RateMovie(request.UserId, request.MovieId, request.Rating);
             return Ok(new { Message = result });
+        }
+        catch (Exception ex)
+        {
+            return BadRequest(new { Message = ex.Message });
+        }
+    }
+
+    [HttpGet("rating/{userId}/{movieId}")]
+    [Authorize]
+    public IActionResult GetUserMovieRating(int userId, int movieId)
+    {
+        try
+        {
+            var rating = _service.GetUserMovieRating(userId, movieId);
+            if (rating == null)
+            {
+                return Ok(new { Rating = (int?)null });
+            }
+            return Ok(new { Rating = rating.Rating });
         }
         catch (Exception ex)
         {

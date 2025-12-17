@@ -86,6 +86,7 @@ public class DataService : IDataService
     public IList<Movie> GetMovies(int page = 1, int pageSize = 50)
     {
         return _imdbContext.Movies
+            .Include(m => m.ImdbRating)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToList();
@@ -104,6 +105,7 @@ public class DataService : IDataService
     public IList<Movie> SearchMovies(string searchTerm, int page = 1, int pageSize = 50)
     {
         return _imdbContext.Movies
+            .Include(m => m.ImdbRating)
             .Where(m => EF.Functions.ILike(m.PrimaryTitle, $"%{searchTerm}%") ||
                        (m.PlotSummary != null && EF.Functions.ILike(m.PlotSummary, $"%{searchTerm}%")))
             .Skip((page - 1) * pageSize)
@@ -297,14 +299,39 @@ public class DataService : IDataService
 
     public int AddMovieNote(int userId, int movieId, string note)
     {
-        return _imdbContext.Database.SqlQueryRaw<int>(
-            "SELECT add_movie_note({0}, {1}, {2}) AS result", userId, movieId, note).First();
+        var maxId = _imdbContext.UserTitleNotes.Any() ? _imdbContext.UserTitleNotes.Max(n => n.NoteId) : 0;
+        var newNote = new UserTitleNote
+        {
+            NoteId = maxId + 1,
+            UserId = userId,
+            MovieId = movieId,
+            NoteBody = note,
+            CreatedAt = System.DateTime.UtcNow,
+            UpdatedAt = System.DateTime.UtcNow,
+            IsPrivate = false
+        };
+        _imdbContext.UserTitleNotes.Add(newNote);
+        _imdbContext.SaveChanges();
+        return (int)newNote.NoteId;
     }
+
 
     public int AddPersonNote(int userId, int personId, string note)
     {
-        return _imdbContext.Database.SqlQueryRaw<int>(
-            "SELECT add_person_note({0}, {1}, {2}) AS result", userId, personId, note).First();
+        var maxId = _imdbContext.UserPersonNotes.Any() ? _imdbContext.UserPersonNotes.Max(n => n.NoteId) : 0;
+        var newNote = new UserPersonNote
+        {
+            NoteId = maxId + 1,
+            UserId = userId,
+            PersonId = personId,
+            NoteBody = note,
+            CreatedAt = System.DateTime.UtcNow,
+            UpdatedAt = System.DateTime.UtcNow,
+            IsPrivate = false
+        };
+        _imdbContext.UserPersonNotes.Add(newNote);
+        _imdbContext.SaveChanges();
+        return (int)newNote.NoteId;
     }
 
     public IList<UserMovieBookmarkResult> GetUserMovieBookmarks(int userId)
@@ -367,33 +394,16 @@ public class DataService : IDataService
 
         _imdbContext.SaveChanges();
 
-        var avgRating = _imdbContext.UserTitleRatings
-            .Where(utr => utr.MovieId == movieId)
-            .Average(utr => utr.Rating);
+        // Do NOT update ImdbRating table - that contains original IMDB data only
+        // User ratings are stored separately in UserTitleRating table
+        
+        return $"Movie {movieId} rated {rating}/10 by user {userId}";
+    }
 
-        var voteCount = _imdbContext.UserTitleRatings
-            .Count(utr => utr.MovieId == movieId);
-
-        var imdbRating = _imdbContext.ImdbRatings.FirstOrDefault(ir => ir.MovieId == movieId);
-        if (imdbRating != null)
-        {
-            imdbRating.Average = System.Math.Round(avgRating, 1);
-            imdbRating.Votes = voteCount;
-        }
-        else
-        {
-            var newImdbRating = new ImdbRating
-            {
-                MovieId = movieId,
-                Average = System.Math.Round(avgRating, 1),
-                Votes = voteCount
-            };
-            _imdbContext.ImdbRatings.Add(newImdbRating);
-        }
-
-        _imdbContext.SaveChanges();
-
-        return $"Movie {movieId} rated {rating}/10 by user {userId}. New average: {avgRating:F1} ({voteCount} votes)";
+    public UserTitleRating? GetUserMovieRating(int userId, int movieId)
+    {
+        return _imdbContext.UserTitleRatings
+            .FirstOrDefault(utr => utr.UserId == userId && utr.MovieId == movieId);
     }
 
     public IList<MovieSearchResult> StructuredStringSearch(int userId, string? title, string? plot, string? character, string? person)
@@ -452,5 +462,17 @@ public class DataService : IDataService
         var placeholders = string.Join(", ", Enumerable.Range(0, keywords.Length).Select(i => $"{{{i}}}"));
         var sql = $"SELECT word AS Word, freq AS Freq FROM keyword_expansion_words({placeholders})";
         return _imdbContext.Database.SqlQueryRaw<WordFrequencyResult>(sql, keywords).ToList();
+    }
+
+    public void AddSearchHistory(int userId, string queryText)
+    {
+        var history = new SearchHistory
+        {
+            UserId = userId,
+            QueryText = queryText,
+            ExecutedAt = System.DateTime.UtcNow
+        };
+        _imdbContext.SearchHistories.Add(history);
+        _imdbContext.SaveChanges();
     }
 }

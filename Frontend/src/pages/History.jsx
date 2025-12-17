@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Container, Tabs, Tab, ListGroup, Spinner, Alert } from 'react-bootstrap';
+import { Link } from 'react-router-dom';
 import { frameworkService } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 
@@ -65,7 +66,7 @@ const History = () => {
                         <h4 className="text-white mb-4 mt-3">Movies</h4>
                         <div className="bento-grid mb-5">
                             {movieBookmarks.map(item => (
-                                <a key={item.movieId} href={`/movies/${item.movieId}`} className="text-decoration-none">
+                                <Link key={item.movieId} to={`/movies/${item.movieId}`} className="text-decoration-none">
                                     <div className="glass-panel p-4 h-100 d-flex flex-column justify-content-between hover-scale">
                                         <h5 className="text-white mb-2">{item.primaryTitle}</h5>
                                         <div className="d-flex justify-content-between align-items-end">
@@ -73,7 +74,7 @@ const History = () => {
                                             <span className="badge bg-primary rounded-pill">Movie</span>
                                         </div>
                                     </div>
-                                </a>
+                                </Link>
                             ))}
                         </div>
                         {movieBookmarks.length === 0 && <p className="text-muted mb-5">No movie bookmarks.</p>}
@@ -81,14 +82,14 @@ const History = () => {
                         <h4 className="text-white mb-4">People</h4>
                         <div className="bento-grid">
                             {personBookmarks.map(item => (
-                                <a key={item.personId} href={`/persons/${item.personId}`} className="text-decoration-none">
+                                <Link key={item.personId} to={`/persons/${item.personId}`} className="text-decoration-none">
                                     <div className="glass-panel p-4 h-100 d-flex flex-column justify-content-between hover-scale">
                                         <h5 className="text-white mb-2">{item.primaryName}</h5>
                                         <div className="text-end">
                                             <span className="badge bg-info rounded-pill">Person</span>
                                         </div>
                                     </div>
-                                </a>
+                                </Link>
                             ))}
                         </div>
                         {personBookmarks.length === 0 && <p className="text-muted">No person bookmarks.</p>}
@@ -97,7 +98,7 @@ const History = () => {
                     <Tab eventKey="ratings" title="Ratings">
                         <div className="bento-grid">
                             {ratings.map(item => (
-                                <a key={item.movieId} href={`/movies/${item.movieId}`} className="text-decoration-none">
+                                <Link key={item.movieId} to={`/movies/${item.movieId}`} className="text-decoration-none">
                                     <div className="glass-panel p-4 h-100 hover-scale position-relative overflow-hidden">
                                         <div className="position-absolute top-0 end-0 p-3">
                                             <span className="display-6 fw-bold text-gold">{item.rating}</span>
@@ -106,7 +107,7 @@ const History = () => {
                                         <h5 className="text-white pe-5 mb-3">{item.primaryTitle}</h5>
                                         <small className="text-secondary">Rated on {new Date(item.ratedAt).toLocaleDateString()}</small>
                                     </div>
-                                </a>
+                                </Link>
                             ))}
                         </div>
                         {ratings.length === 0 && <p className="text-muted text-center py-5">No ratings found.</p>}
@@ -118,14 +119,14 @@ const History = () => {
                                 <div key={idx} className="glass-panel p-4 hover-scale">
                                     <div className="d-flex justify-content-between align-items-start mb-2">
                                         <div>
-                                            <span className={`badge ${item.noteType === 'Movie' ? 'bg-primary' : 'bg-info'} me-2`}>
-                                                {item.noteType}
+                                            <span className={`badge ${(item.noteType || item.NoteType) === 'Movie' ? 'bg-primary' : 'bg-info'} me-2`}>
+                                                {item.noteType || item.NoteType}
                                             </span>
-                                            <h5 className="d-inline text-white">{item.titleOrName}</h5>
+                                            <h5 className="d-inline text-white">{item.titleOrName || item.TitleOrName}</h5>
                                         </div>
-                                        <small className="text-secondary">{new Date(item.createdAt).toLocaleDateString()}</small>
+                                        <small className="text-secondary">{new Date(item.createdAt || item.CreatedAt).toLocaleDateString()}</small>
                                     </div>
-                                    <p className="text-light opacity-75 mb-0" style={{ whiteSpace: 'pre-wrap' }}>{item.noteBody}</p>
+                                    <p className="text-light opacity-75 mb-0" style={{ whiteSpace: 'pre-wrap' }}>{item.noteBody || item.NoteBody}</p>
                                 </div>
                             ))}
                             {notes.length === 0 && <p className="text-muted text-center py-5">No notes found.</p>}
