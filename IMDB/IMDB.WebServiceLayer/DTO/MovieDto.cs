@@ -33,6 +33,7 @@ public class MovieSearchRequest
     public string SearchTerm { get; set; } = string.Empty;
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 50;
+    public int? UserId { get; set; }
 }
 
 public class PersonSearchRequest
@@ -40,6 +41,7 @@ public class PersonSearchRequest
     public string SearchTerm { get; set; } = string.Empty;
     public int Page { get; set; } = 1;
     public int PageSize { get; set; } = 50;
+    public int? UserId { get; set; }
 }
 
 public class PagedResponse<T>

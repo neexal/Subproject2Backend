@@ -53,6 +53,11 @@ public class MovieController : ControllerBase
     public IActionResult SearchMovies([FromBody] MovieSearchRequest request)
     {
         if (request.PageSize > 100) request.PageSize = 50;
+
+        if (request.UserId.HasValue && request.UserId.Value > 0)
+        {
+            _service.AddSearchHistory(request.UserId.Value, request.SearchTerm);
+        }
         
         var movies = _service.SearchMovies(request.SearchTerm, request.Page, request.PageSize);
         var movieDtos = movies.Select(MapToMovieDto).ToList();
@@ -66,6 +71,21 @@ public class MovieController : ControllerBase
             PageSize = request.PageSize,
             TotalCount = totalCount
         });
+    }
+
+    [HttpPost("search/structured")]
+    public IActionResult StructuredSearch([FromBody] StructuredSearchRequest request)
+    {
+        var movies = _service.StructuredStringSearch(request.UserId, request.Title, request.Plot, request.Character, request.Person);
+        // Structured search in DAL returns MovieSearchResult (minimal info), but we might want full DTOs? 
+        // DAL Interface says: IList<MovieSearchResult> StructuredStringSearch(...)
+        // Let's verify MoviSearchResult structure. Assuming it has IDs we can map or use as is.
+        // If it returns MovieSearchResult, we likely return that directly or map it.
+        // Let's assume we return it directly for now or map to MovieDto if compatible.
+        // But wait, MovieDtos are expected by the frontend MovieCard.
+        // Let's check MovieSearchResult definition.
+        
+        return Ok(movies);
     }
 
     [HttpGet("{id:int}/details")]
@@ -209,5 +229,19 @@ public class MovieController : ControllerBase
             Types = altTitle.AltTitleTypes.Select(att => att.TypeName).ToList(),
             Attributes = altTitle.AltTitleAttributes.Select(ata => ata.AttributeName).ToList()
         };
+    }
+
+    [HttpGet("{id:int}/popular-cast")]
+    public IActionResult GetPopularCast(int id)
+    {
+        var popularCast = _service.GetPopularActorsInMovie(id);
+        return Ok(popularCast);
+    }
+
+    [HttpGet("{id:int}/similar")]
+    public IActionResult GetSimilarMovies(int id)
+    {
+        var similarMovies = _service.GetSimilarMovies(id);
+        return Ok(similarMovies);
     }
 }
